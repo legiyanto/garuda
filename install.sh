@@ -125,10 +125,54 @@ sudo systemctl restart nginx > /dev/null 2>&1 && echo "nginx berhasil di-restart
 sudo chmod -R 777 /var/www/html > /dev/null 2>&1 && echo "Izin 777 diberikan ke /var/www/html."
 # Notifikasi akhir di tengah dan berwarna merah
 print_center "Semua aplikasi telah berhasil diinstall." "$RED"
-echo "======================================================="
-echo "USER DATABASE : root "
-echo "PASS DATABASE : admin "
-echo "======================================================="
 
+# Mendapatkan semua antarmuka jaringan yang up dan memiliki alamat IP
+INTERFACE=$(ip -o link show | awk -F': ' '{print $2}')
+IP_ADDRESS=""
 
+for iface in $INTERFACE; do
+    if ip link show $iface | grep -q "state UP"; then
+        IP_ADDRESS=$(ip -4 addr show $iface | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+        if [ -n "$IP_ADDRESS" ]; then
+            break
+        fi
+    fi
+done
+
+# Periksa apakah IP_ADDRESS tidak kosong
+if [ -z "$IP_ADDRESS" ]; then
+    echo "Gagal mendapatkan alamat IP dari antarmuka yang aktif."
+    exit 1
+fi
+
+# Konfigurasi URL phpMyAdmin
+PHP_MY_ADMIN_URL="http://$IP_ADDRESS/phpmyadmin"
+
+# Teks yang akan ditampilkan di dalam kotak
+TEXT1="phpMyAdmin :"
+TEXT2="$PHP_MY_ADMIN_URL"
+TEXT3="user database : root"
+TEXT4="pass database : admin"
+
+# Menentukan panjang maksimum teks
+MAX_LENGTH=40
+
+# Fungsi untuk mencetak baris dalam kotak dengan teks terpusat
+print_box_line() {
+    local text="$1"
+    local text_length=${#text}
+    local padding=$(( (MAX_LENGTH - text_length) / 2 ))
+    printf "║%*s%s%*s║\n" $padding "" "$text" $((MAX_LENGTH - text_length - padding)) ""
+}
+
+# Membuat garis horizontal sesuai lebar kotak
+HORIZONTAL_LINE=$(printf '═%.0s' $(seq 1 $MAX_LENGTH))
+
+# Tampilkan informasi dengan kotak ASCII
+echo "╔$HORIZONTAL_LINE╗"
+print_box_line "$TEXT1"
+print_box_line "$TEXT2"
+print_box_line "$TEXT3"
+print_box_line "$TEXT4"
+echo "╚$HORIZONTAL_LINE╝"
 
