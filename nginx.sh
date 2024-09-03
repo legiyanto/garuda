@@ -20,6 +20,9 @@ server {
     location ~ \.php$ {
         try_files $fastcgi_script_name =404;
         include fastcgi_params;
+        fastcgi_connect_timeout 1000;
+        fastcgi_send_timeout 1000;
+        fastcgi_read_timeout 1000;
         fastcgi_pass unix:/run/php/php7.4-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param DOCUMENT_ROOT $realpath_root;
